@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and global stats",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "totalXP": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayName", "email"]
+    },
+    "Game": {
+      "title": "Game Template",
+      "description": "A reusable game engine mechanic",
+      "type": "object",
+      "properties": {
+        "gameId": { "type": "string" },
+        "type": { "type": "string", "description": "e.g. 'match', 'trivia', 'gap-fill'" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "schema": { "type": "object", "description": "The JSON schema this game expects for content" },
+        "rating": { "type": "number" },
+        "playsCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["gameId", "type", "name", "schema"]
+    },
+    "Dataset": {
+      "title": "Knowledge Base",
+      "description": "Content for games, often AI-generated",
+      "type": "object",
+      "properties": {
+        "datasetId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "domain": { "type": "string", "description": "e.g. 'language', 'science', 'history'" },
+        "content": { "$ref": "LanguageDatasetContent" },
+        "gameType": { "type": "string" },
+        "authorId": { "type": "string" },
+        "isPublic": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["datasetId", "title", "content", "gameType"]
+    },
+    "LanguageDatasetContent": {
+      "title": "Language Dataset Content",
+      "description": "Standard structure for language learning datasets",
+      "type": "object",
+      "properties": {
+        "extracted_text": { "type": "string" },
+        "words_hebrew": { "type": "array", "items": { "type": "string" } },
+        "words_english": { "type": "array", "items": { "type": "string" } },
+        "sentences": { "type": "array", "items": { "type": "string" } },
+        "schemas": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "type": { "type": "string" },
+              "items": { "type": "array", "items": { "type": "object" } },
+              "categories": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "GameSession": {
+      "title": "Game Session",
+      "description": "A historical record of a user playing a game. Crucial for reports.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "gameId": { "type": "string" },
+        "gameName": { "type": "string" },
+        "datasetId": { "type": "string" },
+        "datasetTitle": { "type": "string" },
+        "domain": { "type": "string" },
+        "score": { "type": "integer" },
+        "maxScore": { "type": "integer" },
+        "accuracy": { "type": "number" },
+        "durationMs": { "type": "integer" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sessionId", "userId", "gameId", "score", "completedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/games/{gameId}": {
+      "schema": "Game",
+      "description": "Game mechanic templates (the engines)"
+    },
+    "/datasets/{datasetId}": {
+      "schema": "Dataset",
+      "description": "Stored knowledge packs / content"
+    },
+    "/sessions/{sessionId}": {
+      "schema": "GameSession",
+      "description": "Historical log of performance for analytics"
+    }
+  }
+}
