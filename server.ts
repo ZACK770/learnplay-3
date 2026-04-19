@@ -109,6 +109,18 @@ async function startServer() {
     }
   });
 
+  app.get('/api/admin/users', authenticate, async (req: any, res) => {
+    if (req.user.email !== 'A0527698420@gmail.com') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    try {
+      const result = await pool.query('SELECT * FROM users ORDER BY created_at DESC');
+      res.json(result.rows);
+    } catch (err) {
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
   // --- Games & Engines API ---
   app.get('/api/engines', async (req, res) => {
     try {
@@ -266,7 +278,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`========================================`);
     console.log(`LEARNPLAY SERVER STARTED - v16 (POSTGRE)`);
     console.log(`PORT: ${PORT}`);

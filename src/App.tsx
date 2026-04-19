@@ -35,9 +35,13 @@ import {
   Settings as SettingsIcon,
   Coins,
   Shield,
+  Mail,
+  Lock,
+  User as UserAuthIcon,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth, loginWithGoogle } from './lib/firebase';
+import { auth, loginWithGoogle, loginWithEmail, registerWithEmail } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { AppState, GameEngine, Dataset, GameSession, UserProfile } from './types';
 import { cn } from './lib/utils';
@@ -260,6 +264,7 @@ export default function App() {
   const [allEngines, setAllEngines] = useState<GameEngine[]>([]);
   const [currentDataset, setCurrentDataset] = useState<Dataset | null>(null);
   const [sessions, setSessions] = useState<GameSession[]>([]);
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [aiUsage, setAiUsage] = useState({ left: 3, isPremium: false });
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
@@ -311,6 +316,11 @@ export default function App() {
         setAllEngines(engines);
         setAllDatasets(datasets);
         setSessions(recentSessions);
+
+        if (currentUser.email === 'A0527698420@gmail.com') {
+          const users = await api.getAllUsers();
+          setAdminUsers(users);
+        }
       } catch (err) {
         console.error("API Fetch Error:", err);
       }
@@ -582,27 +592,149 @@ export default function App() {
   }
 
   if (!user) {
+    const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
+    const [authError, setAuthError] = useState('');
+
+    const handleEmailAuth = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setAuthError('');
+      try {
+        if (authMode === 'login') {
+          await loginWithEmail(email, password);
+        } else {
+          if (!name) throw new Error('name_required');
+          await registerWithEmail(email, password, name);
+        }
+      } catch (err: any) {
+        setAuthError(err.message === 'name_required' ? t('auth.error.name') : t('auth.error.general'));
+      }
+    };
+
     return (
-      <div className="min-h-screen bg-[#0A0A12] flex items-center justify-center p-8 relative">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-blue-500/20">
-            <BrainCircuit className="w-10 h-10 text-white" />
+      <div className={cn("min-h-screen bg-[#0A0A12] flex items-center justify-center p-8 relative overflow-hidden", isRTL ? "rtl" : "ltr")} dir={isRTL ? "rtl" : "ltr"}>
+        {/* Background Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/10 blur-[120px] rounded-full" />
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md w-full relative z-10"
+        >
+          <div className="bg-[#1E1E2E] border border-white/5 rounded-3xl p-8 shadow-2xl">
+            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-500/20">
+              <BrainCircuit className="w-9 h-9 text-white" />
+            </div>
+            
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-black mb-2">
+                {authMode === 'login' ? t('auth.login.title') : t('auth.register.title')}
+              </h2>
+              <p className="text-gray-500 text-sm">
+                {authMode === 'login' ? t('auth.login.subtitle') : t('auth.register.subtitle')}
+              </p>
+            </div>
+
+            <form onSubmit={handleEmailAuth} className="space-y-4 mb-6">
+              {authMode === 'register' && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">{t('auth.field.name')}</label>
+                  <div className="relative">
+                    <UserAuthIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input 
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Your Full Name"
+                      className="w-full bg-[#0F0F1A] border border-white/5 rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">{t('auth.field.email')}</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input 
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className="w-full bg-[#0F0F1A] border border-white/5 rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">{t('auth.field.password')}</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input 
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-[#0F0F1A] border border-white/5 rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {authError && (
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4" />
+                  {authError}
+                </div>
+              )}
+
+              <button 
+                type="submit"
+                className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-black text-sm hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20"
+              >
+                {authMode === 'login' ? t('auth.login.submit') : t('auth.register.submit')}
+              </button>
+            </form>
+
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/5"></div>
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest">
+                <span className="bg-[#1E1E2E] px-4 text-gray-600">{t('auth.divider')}</span>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleLogin}
+              className="w-full bg-white/5 border border-white/10 text-white py-3.5 rounded-xl font-bold text-sm hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+            >
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/smartlock/google.svg" className="w-5 h-5" alt="" />
+              {t('auth.google.submit')}
+            </button>
+
+            <div className="mt-8 text-center">
+              <button 
+                onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                className="text-gray-500 hover:text-white transition-colors text-xs font-bold"
+              >
+                {authMode === 'login' ? t('auth.login.toggle') : t('auth.register.toggle')}
+              </button>
+            </div>
           </div>
-          <h2 className="text-4xl font-black mb-4">Welcome back!</h2>
-          <p className="text-gray-500 mb-10">Sign in to continue your learning journey.</p>
-          <button 
-            onClick={handleLogin}
-            className="w-full bg-white text-black py-4 rounded-xl font-black text-lg hover:bg-gray-100 transition-all flex items-center justify-center gap-3"
-          >
-            Sign in with Google
-          </button>
+
           <button 
             onClick={() => setActiveState('landing')}
-            className="mt-6 text-gray-500 hover:text-white transition-colors text-sm font-bold"
+            className="mt-8 w-full text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
           >
-            Back to Home
+            <ChevronRight className={cn("w-4 h-4", isRTL ? "" : "rotate-180")} />
+            {t('nav.back_to_home')}
           </button>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -1220,11 +1352,13 @@ export default function App() {
             <motion.div key="admin-users" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8">
                <UnifiedTable 
                 title="User Management"
-                data={[
-                  { name: 'Alex Regev', email: 'alex@example.com', plan: 'Pro', usage: 124, lastActive: '2h ago' },
-                  { name: 'Maya Cohen', email: 'maya@example.com', plan: 'Free', usage: 3, lastActive: '1d ago' },
-                  { name: 'Dan Levi', email: 'dan@example.com', plan: 'Free', usage: 1, lastActive: '1w ago' },
-                ]}
+                data={adminUsers.map(u => ({
+                  name: u.display_name,
+                  email: u.email,
+                  plan: u.is_premium ? 'Pro' : 'Free',
+                  usage: u.xp || 0,
+                  lastActive: u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'
+                }))}
                 columns={[
                   { key: 'name', label: 'Name' },
                   { key: 'email', label: 'Email' },

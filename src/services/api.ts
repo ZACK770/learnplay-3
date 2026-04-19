@@ -50,6 +50,13 @@ export const api = {
     return res.data;
   },
 
+  // Admin
+  getAllUsers: async (): Promise<any[]> => {
+    const headers = await getAuthHeaders();
+    const res = await axios.get(`${API_BASE}/admin/users`, { headers });
+    return res.data;
+  },
+
   // Payments
   processDirectPayment: async (data: any): Promise<any> => {
     const headers = await getAuthHeaders();
